@@ -59,6 +59,9 @@ format_lifetable <- function(
     source='ihme'
 ) {
 
+    # Read in file
+    lt <- read.csv(lifefile)
+    
     # Conditional survival (SurvY)
     switch(source,
            ihme = {

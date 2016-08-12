@@ -24,6 +24,7 @@ cat('\nPreparing inputs...')
 # Identify the trial arms 
 trials <- gsub('prop_','',
                grep('prop', colnames(treat_chars), value=TRUE))
+if (length(trials)==0) stop('Fix trial names in treatment input file')
 
 # Identify subgroups
 subgroups <- as.character(unique(control_notreat$subgroup))
