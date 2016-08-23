@@ -18,7 +18,11 @@ if (!'using_wrapper'%in%ls()) {
     warning('Empyting the workspace')
     rm(list=ls())
     model_version <- 'tza_3b'
-    base_path <- '~/Documents/jbirnbau/screentreat/examples'
+    
+    setwd('~')
+    if (grepl('jbirnbau', getwd())) rootdir <- getwd()
+    if (grepl('jeanette', getwd())) rootdir <- file.path(getwd(), 'Documents', 'jbirnbau')
+    base_path <- file.path(rootdir, 'screentreatGlobal/examples')
 }
 
 ############################################################
