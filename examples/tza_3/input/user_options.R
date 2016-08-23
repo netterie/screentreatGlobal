@@ -30,7 +30,7 @@ if (!'using_wrapper'%in%ls()) {
 # Simulation features
 ############################################################
 country = 'tza'
-nsim = 10
+nsim = 100
 times = c(5,10)
 pop_size = 100000
 study_year = 2013 # Approx year of incidence/life table data
