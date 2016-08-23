@@ -1,0 +1,21 @@
+"Trial","Effect","Follow-Up Year","Measure","Estimate","UI","Estimate_Orig"
+"withoutER","Effect of screening, same treatment",25,"Cumulative Incidence, Group 0",0.0084,"(0.0081,0.0089)",0.0084
+"withoutER","Effect of screening, same treatment",25,"Cumulative Incidence, Group 1",0.0084,"(0.0081,0.0089)",0.0084
+"withoutER","Effect of screening, same treatment",25,"MRR",1,"(1,1)",1
+"withoutER","Effect of screening, same treatment",25,"ARR",0,"(0,0)",0
+"withoutER","Effect of screening, same treatment",25,"NNS",Inf,"(NA,NA)",NA
+"withER","Effect of screening, same treatment",25,"Cumulative Incidence, Group 0",0.0083,"(0.008,0.0088)",0.0083
+"withER","Effect of screening, same treatment",25,"Cumulative Incidence, Group 1",0.0083,"(0.008,0.0088)",0.0083
+"withER","Effect of screening, same treatment",25,"MRR",1,"(1,1)",1
+"withER","Effect of screening, same treatment",25,"ARR",0,"(0,0)",0
+"withER","Effect of screening, same treatment",25,"NNS",Inf,"(NA,NA)",NA
+"withER","Effect of treatment, without screening",25,"Cumulative Incidence, Group 0",0.0084,"(0.0081,0.0089)",0.0084
+"withER","Effect of treatment, without screening",25,"Cumulative Incidence, Group 1",0.0083,"(0.008,0.0088)",0.0083
+"withER","Effect of treatment, without screening",25,"MRR",0.9881,"(0.9812,0.9891)",0.9855
+"withER","Effect of treatment, without screening",25,"ARR",1e-04,"(1e-04,2e-04)",1e-04
+"withER","Effect of treatment, without screening",25,"NNS",10000,"(6058.8235,10861.1111)",8537.0087
+"withER","Effect of treatment, with screening",25,"Cumulative Incidence, Group 0",0.0084,"(0.0081,0.0089)",0.0084
+"withER","Effect of treatment, with screening",25,"Cumulative Incidence, Group 1",0.0083,"(0.008,0.0088)",0.0083
+"withER","Effect of treatment, with screening",25,"MRR",0.9881,"(0.9812,0.9891)",0.9855
+"withER","Effect of treatment, with screening",25,"ARR",1e-04,"(1e-04,2e-04)",1e-04
+"withER","Effect of treatment, with screening",25,"NNS",10000,"(6058.8235,10861.1111)",8537.0087
