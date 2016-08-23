@@ -28,8 +28,8 @@ rm(list=ls())
 # What is the name of the user options file associated with
 # this wrapper file? Location is presumed to be in [area]/code,
 # e.g. diagnostics/code
-user_options_file = 'user_optionsTZA.R'
-input_data_file = 'input_tza_tmp1.csv'
+user_options_file = 'user_optionsTZA2.R'
+input_data_file = 'input_tza_barrier.csv'
 
 # Should a copy of the input dataset be stored in the model folder?
 # It will be named input_data.csv, so describe it below in 
@@ -38,20 +38,20 @@ copy_data = TRUE
 
 # Establish model folders and describe the model
 model_type = 'screentreatGlobal'
-model_version = 'tza_1'
+model_version = 'tza_3c'
 model_description = c(country='Tanzania',
                       data_stage='Catherine lit search approx',
-                      data_surv='SEER for early, Galukande 2015 for advanced',
+                      data_surv='CT for early, Galukande 2015 for advanced',
                       data_treat='EBCTCG trials',
                       data_other='ER dist from Catherine',
                       design='two trials: withoutER, withER',
                       stages='early and advanced',
                       stageshift='none',
                       prognostic_factors='ER',
-                      treatments='None, Tamoxifen, Chemo',
-                      efficacies='from EBTCG0',
+                      treatments='None, Tamoxifen',
+                      efficacies='from EBCTCG',
                       life_table='IHME',
-                      other='Population aged 40, not 50')
+                      other='like _3, but shift from 85% to 35%')
 
 # Do you want to actually run the model now, or 
 # do everything in this file except run the model?

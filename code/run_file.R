@@ -62,6 +62,7 @@ cat('\nSimulating clinical incidence...')
 # variable. It would be easy to instead use Leslie's 
 # create_pop_list() function, and that would work with
 # a more complex age pattern, too
+
 pop_chars_rows <- lapply(pop_chars, function(x, Npop, Nsim) {
                         sim_multinom(nsims=Npop, 
                                      nreps=Nsim,
@@ -390,18 +391,69 @@ screen_ttd <- sapply_withnames(screen_ageCD,
                                 ageOC, ageentry)
 
 ############################################################
+# Summarize case structure
+############################################################
+
+ids <- sapply_withnames(control_treatments,
+                        funX=return_value_from_id,
+                        treat_chars, 'txSSid')
+names(times) <- as.character(times)
+cases <- sapply_withnames(times, funX=function(x) {
+                    cases <- ageclin<=(ageentry+x)
+                    df <- ldply(sapply_withnames(ids, 
+                                       funX=function(y, c) {
+                                           round(table(y[c])/ncol(c))
+                                       }, cases), 
+                            rbind)
+                    df$times <- x
+                    return(df)
+                    #round(table(SSids[cases])/ncol(cases))
+                                })
+cases <- ldply(cases, rbind)
+cases[is.na(cases)] <- 0
+
+mcases <- melt(cases, id.vars=c('.id', 'times'))
+colnames(mcases)[which(colnames(mcases)=='.id')] <- 'trial'
+mcases <- data.frame(mcases, 
+                     do.call(rbind, strsplit(as.character(mcases$variable), '\\.')))
+colnames(mcases) <- c('Trial', 'Time', 'id', 'N', 'Stage', 'Subgroup', 'Treatment')
+
+rcases <- cast(mcases, Time+Trial+Treatment~Stage+Subgroup, drop='id', value='N')
+
+# Save
+write.csv(rcases,
+          file.path(base_path, model_version, 'output', 
+                    'cases.csv'),
+          row.names=FALSE)
+
+############################################################
 # Summarize mortality across arms and trials
 ############################################################
 cat('\nConstructing results tables...')
 
+# New results - 8/20/16
+
+    if(!'denom'%in%ls()) denom=10000
+
+    control_years <- tally_years_simple(times, 
+                                      control_ttd,
+                                      per=denom)
+    screen_years <- tally_years_simple(times, 
+                                      screen_ttd,
+                                      per=denom)
+
 # New results - 7/13/15
+
+    if(!'denom'%in%ls()) denom=10000
 
     control_cuminc <- tally_cuminc_simple(times, 
                                       control_ttcd,
-                                      control_CoD)
+                                      control_CoD,
+                                      per=denom)
     screen_cuminc <- tally_cuminc_simple(times, 
                                       screen_ttcd,
-                                      screen_CoD)
+                                      screen_CoD,
+                                      per=denom)
 
 # Construct rows of the table
 
@@ -487,6 +539,30 @@ cat('\nConstructing results tables...')
                  onecell=TRUE,
                  numdec=1)
 
+    # Across-trial years of live saved, 
+    atyears_noscreen <- sapply_withnames(names(control_years),
+                                       funX=function(x){
+                                         replicate(length(trials),
+                                                   control_years[[x]][,1]) -
+                                         control_years[[x]]
+                                       })
+    atyears_screen <- sapply_withnames(names(control_years),
+                                     funX=function(x){
+                                       replicate(length(trials),
+                                                 control_years[[x]][,1]) -
+                                         screen_years[[x]]
+                                     })
+    r9 <- lapply(atyears_noscreen,                             
+                 summarize_over_sims, 
+                 funX='mean',
+                 onecell=TRUE,
+                 numdec=1)
+    r10 <- lapply(atyears_screen,                             
+                 summarize_over_sims, 
+                 funX='mean',
+                 onecell=TRUE,
+                 numdec=1)
+
 # Compile across follow-up times
 
 new_table <- lapply(names(control_cuminc), 
@@ -497,7 +573,10 @@ new_table <- lapply(names(control_cuminc),
                         empty_row,
                         r4[[x]],r5[[x]],r6[[x]],
                         empty_row,
-                        r7[[x]], r8[[x]]),row.names=NULL)
+                        r7[[x]], r8[[x]],
+                        empty_row,
+                        r9[[x]], r10[[x]]
+                        ),row.names=NULL)
                   tab = data.frame(`Follow-up`=c(as.character(x),
                                                rep('', nrow(tab)-1)),
                                    Measure=c('Cumulative breast cancer mortality',
@@ -505,15 +584,19 @@ new_table <- lapply(names(control_cuminc),
                                              'MRRs within trials',
                                              'MRRs across trials', '', '', 
                                              'ARRs within trials', 
-                                             'ARRs across trials', '', ''),
+                                             'ARRs across trials', '', '',
+                                             'Years saved across trials', '', ''),
                                    SubMeasure=c('','No screening', 'Screening', 
                                                 '', '', 'No screening', 'Screening', 
-                                                '', '', 'No screening', 'Screening'),
+                                                '', '', 'No screening', 'Screening',
+                                                '', 'No screening', 'Screening'),
                                    tab,
                                    check.names=FALSE)
                 })
 
 new_table_full <- do.call('rbind', new_table)
+
+new_table_full$Note <- paste('Note: Results per', denom, 'women')
 
 # Save
 write.csv(new_table_full,
@@ -522,102 +605,9 @@ write.csv(new_table_full,
           row.names=FALSE)
 
 
-# Old results
-if (1==1) {
-    within_trials <- sapply_withnames(trials,
-                                       funX=function(x,
-                                                     times,
-                                                     control_ttcd,
-                                                     control_CoD,
-                                                     screen_ttcd,
-                                                     screen_CoD) {
-                                           tally_cuminc(followup=times,
-                                                        etimes=control_ttcd[[x]],
-                                                        event=control_CoD[[x]],
-                                                        etimes2=screen_ttcd[[x]],
-                                                        event2=screen_CoD[[x]])
-                                       }, 
-                                       times,
-                                       control_ttcd,
-                                       control_CoD,
-                                       screen_ttcd,
-                                       screen_CoD)
-    
-    across_controls <- sapply_withnames(trials[2:length(trials)],
-                                       funX=function(x,
-                                                     times,
-                                                     control_ttcd,
-                                                     control_CoD) {
-                                           tally_cuminc(followup=times,
-                                                        etimes=control_ttcd[[1]],
-                                                        event=control_CoD[[1]],
-                                                        etimes2=control_ttcd[[x]],
-                                                        event2=control_CoD[[x]])
-                                       }, 
-                                       times,
-                                       control_ttcd,
-                                       control_CoD)
-    
-    across_screenings <- sapply_withnames(trials[2:length(trials)],
-                                       funX=function(x,
-                                                     times,
-                                                     screen_ttcd,
-                                                     screen_CoD) {
-                                           tally_cuminc(followup=times,
-                                                        etimes=screen_ttcd[[1]],
-                                                        event=screen_CoD[[1]],
-                                                        etimes2=screen_ttcd[[x]],
-                                                        event2=screen_CoD[[x]])
-                                       }, 
-                                       times,
-                                       screen_ttcd,
-                                       screen_CoD)
+# Old results - attempting to save cuminc plot
 
-
-
-    ############################################################
-    # Format and save a results table
-    ############################################################
-    # There's probably a quicker way to do this if there's a way
-    # to access the names in an sapply when USE.NAMES=TRUE
-    
-    for (i in 1:length(trials)) {
-        within_trials[[i]] <- 
-            cbind(data.frame(Trial=names(within_trials)[i], 
-                             Effect='Effect of screening, same treatment'),
-                  within_trials[[i]])
-        if (i==1) final_table <- within_trials[[i]] 
-        else final_table <- rbind(final_table, within_trials[[i]])
-    }
-    
-    for (i in 1:(length(trials)-1)) {
-        across_controls[[i]] <-
-            cbind(data.frame(Trial=names(across_controls)[i],
-                             Effect='Effect of treatment, without screening'),
-                  across_controls[[i]])
-        across_screenings[[i]] <-
-            cbind(data.frame(Trial=names(across_screenings)[i],
-                             Effect='Effect of treatment, with screening'),
-                  across_screenings[[i]])
-        final_table <- rbind(final_table,
-                             across_controls[[i]],
-                             across_screenings[[i]])
-    }
-    
-    # Format out . in column name
-    colnames(final_table) <- gsub('\\.', ' ', colnames(final_table))
-    colnames(final_table) <- gsub(' Up', '-Up', colnames(final_table))
-    
-    # Save
-    write.csv(final_table,
-              file.path(base_path, model_version, 'output', 
-                        'cuminc_mrr_full.csv'),
-              row.names=FALSE)
-    write.csv(subset(final_table, `Follow-Up Year`==max(times)),
-              file.path(base_path, model_version, 'output', 
-                        paste0('cuminc_mrr_', max(times), '.csv')),
-              row.names=FALSE)
-
+if (1==0) {
     ############################################################
     # Graph cumulative incidence
     ############################################################
@@ -657,8 +647,8 @@ if (1==1) {
            filename=file.path(base_path, model_version, 'output',
                               'cuminc_plot.pdf'),
            width=6, height=5)
+} # end commenting out old results
 
-} # End commenting out old results
 
 ############################################################
 # Validate model: Age-specific cancer mortality rates,
@@ -729,180 +719,62 @@ write.csv(mortrates_wide,
 # Validate model: Mean survivals
 ############################################################
 
-if (grepl('breast_ER-HER2_5', model_version)) {
+if (1==1) {
     # Baseline mean survivals
     if (surv_distr=='exponential') {
         base_msurvs <- subset(
                               transform(control_notreat, 
-                                        Historical=1/mortrate,
-                                        Contemp1999=1/mortrate,
-                                        Perfect=1/mortrate,
+                                        MeanSurv=1/mortrate,
                                         Arm=SSid,
                                         Subgroup=c('Baseline survivals',
                                                    rep('',
                                                        nrow(control_notreat)-1))),
-                              select=c(Subgroup, Arm, Historical, Contemp1999,
-                                       Perfect))
+                              select=c(Subgroup, Arm, MeanSurv))
     } else if (surv_distr=='weibull') {
-        base_msurvs <- subset(
-                              transform(control_notreat, 
-                                        Historical=mortscale*gamma(1 + 1/mortshape),
-                                        Contemp1999=mortscale*gamma(1 + 1/mortshape),
-                                        Perfect=mortscale*gamma(1 + 1/mortshape),
-                                        Arm=SSid,
-                                        Subgroup=c('Baseline survivals',
-                                                   rep('',
-                                                       nrow(control_notreat)-1))),
-                              select=c(Subgroup, Arm, Historical, Contemp1999,
-                                       Perfect))
+        stop('Not coded')
     }
-    # Indicator of stage
+    # Indicator of stage-subgroup
     control_stage <- return_value_from_id(control_notreat_rows,
                                           control_notreat,
-                                          'stage')
+                                          'SSid')
     screen_stage <- return_value_from_id(screen_notreat_rows,
                                           control_notreat,
-                                          'stage')
+                                          'SSid')
 
-    # Mean survivals
-    msurv_control_all <- sapply_withnames(control_clin2cd,
-                                         mean_matrix_subgroup)
-    msurv_control_early <- sapply_withnames(control_clin2cd,
-                                         mean_matrix_subgroup,
-                                         control_stage=='Early')
-    msurv_control_adv <- sapply_withnames(control_clin2cd,
-                                         mean_matrix_subgroup,
-                                         control_stage=='Advanced')
-    msurv_control_shift <- sapply_withnames(control_clin2cd,
-                                         mean_matrix_subgroup,
-                                         shift_treatment)
-    msurv_screen_all <- sapply_withnames(screen_clin2cd,
-                                         mean_matrix_subgroup)
-    msurv_screen_early <- sapply_withnames(screen_clin2cd,
-                                         mean_matrix_subgroup,
-                                         screen_stage=='Early')
-    msurv_screen_adv <- sapply_withnames(screen_clin2cd,
-                                         mean_matrix_subgroup,
-                                         screen_stage=='Advanced')
-    msurv_screen_shift <- sapply_withnames(screen_clin2cd,
-                                         mean_matrix_subgroup,
-                                         shift_treatment)
+    # Mean net survivals - Control
+    msurvs <- vector('list')
+    for (s in control_notreat$SSid) {
+        msurvs[[s]] <- sapply_withnames(control_clin2cd,
+                                             mean_matrix_subgroup,
+                                             control_stage==s)
+    }
+    # Mean net survivals - Screen
+    msurvsScr <- vector('list')
+    for (s in control_notreat$SSid) {
+        msurvsScr[[s]] <- sapply_withnames(screen_clin2cd,
+                                             mean_matrix_subgroup,
+                                             screen_stage==s)
+    }
 
-    msurv_table <- data.frame(Subgroup=c('All','',
-                                         'Early stage', '',
-                                         'Advanced stage', '',
-                                         'Shifted cases', ''),
-                              Arm=rep(c('Control', 'Screen'), 4),
-                              rbind(msurv_control_all,
-                                    msurv_screen_all,
-                                    msurv_control_early,
-                                    msurv_screen_early,
-                                    msurv_control_adv,
-                                    msurv_screen_adv,
-                                    msurv_control_shift,
-                                    msurv_screen_shift))
-
-    msurv_table <- rbind(msurv_table, base_msurvs)
-    msurv_table <- transform(msurv_table, 
-                             Historical=unlist(Historical),
-                             Contemp1999=unlist(Contemp1999),
-                             Perfect=unlist(Perfect))
+    msurv_df <- data.frame(do.call('rbind', msurvs))
+    msurvScr_df <- data.frame(do.call('rbind', msurvsScr))
+    msurv_table <- data.frame(base_msurvs[,2:3],
+                         msurv_df, msurvScr_df)
+    colnames(msurv_table) <- c('Subgroup', 'Expected Mean',
+                               paste0('Control_', trials),
+                               paste0('Screen_', trials))
+    for (i in 2:ncol(msurv_table)) {
+        msurv_table[,i] <- unlist(msurv_table[,i])
+    }
+                         
 
     # Save
-    write.csv(msurv_table,
+    write.csv(cbind(msurv_table),
               file.path(base_path, model_version, 'output', 
                         'mean_survivals.csv'),
               row.names=FALSE)
 
 }
 
-############################################################
-# An aside to check for errors
-############################################################
-
-if (1==0) {
-
-    # In a new session:
-    rm(list=ls())
-
-    source('~/screentreat/code/user_options.R')
-    source('~/screentreat/code/run_file.R')
-
-    # Indices of different cases (e or a for early/advanced,
-    # p or n for pos/neg, and s for stage-shifted)
-    ep = c(3,1)
-    en = c(1,2)
-    aps = c(4,3)
-    ap = c(1,6)
-    ans = c(1,1)
-    an = c(3,3)
-    allcheck = list(ep, en, aps, ap, ans, an)
-    names(allcheck) = c('1.ep', '2.en', '3.aps', '4.ap', '5.ans', '6.an')
-
-    # Function to check all these indices
-    checkindices = function(indices, matrix_list) {
-        lapply(indices, function(i, matrix_list) {
-               sapply(matrix_list, function(m, index) {
-                        return(m[index[1],index[2]])
-                    }, i)
-            }, matrix_list)
-    }
-
-    # Check that my assignments are correct
-    control_notreat
-    checkindices(allcheck, list(control_notreat_rows, 
-                                screen_notreat_rows))
-
-    # Check that stage shifts are correct for aps and ans
-    checkindices(allcheck, list(shift))
-
-    # Now treatments - this is difficult to check with 
-    # individuals. We'll need a population check.
-    allcheck
-    treat_chars
-    checkindices(allcheck, control_treatments)
-    noshift_treat <- 
-    checkindices(allcheck[c(1,2,4,6)], list(contH=control_treatments[[1]],
-                                  screH=screen_treatments[[1]],
-                                  contC=control_treatments[[2]],
-                                  screC=screen_treatments[[2]]))
-    shift_treat <- 
-    checkindices(allcheck[c(3,5)], list(contH=control_treatments[[1]],
-                                  screH=screen_treatments[[1]],
-                                  contC=control_treatments[[2]],
-                                  screC=screen_treatments[[2]]))
-    checkindices(allcheck[c(3,5)], list(contH=control_HRs[[1]],
-                                  screH=screen_HRs[[1]],
-                                  contC=control_HRs[[2]],
-                                  screC=screen_HRs[[2]]))
-
-    # Assignment of baseline mort 
-    # Found my first mistake here!
-    checkindices(allcheck, list(control_baserate, screen_baserate))
-
-
-    # Assignment of HRs
-    checkindices(allcheck, control_HRs)
-    noshift_treat
-    shift_treat
-    checkindices(allcheck, screen_HRs)
-    noshift_treat
-    shift_treat
-    
-    # Final mort rate
-    checkindices(allcheck, control_rate)
-    noshift_treat
-    shift_treat
-    checkindices(allcheck, screen_rate)
-    noshift_treat
-    shift_treat
-
-    # Final mort rate, pop level, first one:
-    lapply(unique(c(control_rate[[1]])), 
-           function(x, ttcd, cr) {
-               cat('\nRate is', x, 'with expected mean', 1/x)
-               print(summary(ttcd[cr==x]))
-           }, ttcd, control_rate[[1]])
-}
 
 

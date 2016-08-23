@@ -17,7 +17,7 @@
 if (!'using_wrapper'%in%ls()) {
     warning('Empyting the workspace')
     rm(list=ls())
-    model_version <- 'tza_1'
+    model_version <- 'tza_3b'
     base_path <- '~/Documents/jbirnbau/screentreat/examples'
 }
 
@@ -25,11 +25,12 @@ if (!'using_wrapper'%in%ls()) {
 # Simulation features
 ############################################################
 country = 'tza'
-nsim = 100
-times = c(10,25)
+nsim = 10
+times = c(5,10)
 pop_size = 100000
 study_year = 2013 # Approx year of incidence/life table data
 inc_source = 'globocan'
+standard_pop = TRUE
 
 ############################################################
 # Input data files
@@ -41,30 +42,47 @@ incidence_file = file.path(rootdir, 'screentreatGlobal/data',
 library_file = file.path(rootdir, 'screentreatGlobal/code/screentreat_library.R')
 life_table_file = file.path(rootdir, 'screentreatGlobal/data', 
                            paste0(country, '_lifetable.csv'))
+age_file = file.path(rootdir, 'screentreatGlobal/data', 
+                     paste0(country, '_age.csv'))
+if (standard_pop) age_file = file.path(rootdir, 'screentreatGlobal/data', 
+                     'std_age.csv')
 
 
 ############################################################
 # Population features
 ############################################################
 
-pop_chars = 
-    list(age=data.frame(age=c(40), prop=c(1)),
-         male=data.frame(male=c(0), prop=c(1)))
+# 8/19/16 note: using a function format_age to get single-year
+# ages from 5-yr age groups
+if ('age_file'%in%ls()) {
+    source(library_file)
+    ages <- format_age(age_file, minAge=0, maxAge=80)
+    pop_chars = 
+        list(age=ages,
+             male=data.frame(male=c(0), prop=c(1)))
+} else {
+    pop_chars = 
+        list(age=data.frame(age=c(40), prop=c(1)),
+             male=data.frame(male=c(0), prop=c(1)))
+}
 
 # Is age in the data age at clinical incidence? 
 # If not, provide incidence table
 age_is_ageclin = FALSE
 if (!age_is_ageclin) {
-    inc_table = read.csv(incidence_file, header=TRUE, 
+    inc_table = read.csv(incidence_file, header=FALSE, 
                          stringsAsFactors=FALSE)
 }
+
+# Denominator for reporting results
+denom <- 100000
 
 ############################################################
 # Screening, treatment and cancer mortality
 ############################################################
 
 # Stage shift
-HR_advanced = 1
+HR_advanced = 0.6/0.85
 
 # Within stage effects
 instage_screen_benefit_early = 1
@@ -89,8 +107,8 @@ control_notreat = data.frame(stage=c(rep('Early',2),
                                      rep('Advanced',2)),
                              subgroup=rep(c('ER+',
                                             'ER-'),2),
-                             mortrate=c(rep(.01992,2),rep(0.21, 2)),
-                             prop=c(0.045, 0.255, 0.105, 0.595)
+                             mortrate=c(rep(.0446,2),rep(0.21, 2)),
+                             prop=c(0.045, 0.105, 0.255, 0.595)
                                 # Early ER+, Early ER-, Adv ER+, Adv ER-
                                 # Expected ER+/- is 30%/70%
                                 # Rough from literature: early/adv is 15%/85%

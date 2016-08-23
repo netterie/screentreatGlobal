@@ -49,6 +49,35 @@ sim_multinom <- function(
 }
 
 ############################################################
+## format_age
+############################################################
+# The gsize variable indicates the age group intervals
+
+format_age <- function(age_file, gsize=5, minAge=20, maxAge=85) {
+
+    grouped <- read.csv(age_file, header=TRUE)
+
+    if (!is.numeric(grouped$Population)) stop('Error in format_age: character pop sizes')
+
+    # Split into single-year age groups
+    split <- lapply(grouped$Age, function(a,data=grouped,g=gsize) {
+                        NewPop <- data[which(data$Age==a), 'Population']/g
+                        data.frame(age=a:(a+4), pop=rep(NewPop,g))
+                         })
+    split <- do.call('rbind', split)
+    
+    # Verify
+    if (sum(split$pop)!=sum(grouped$Population)) stop('Division error in format_age')
+
+    # Return proportions after limiting the minimum age
+    split <- subset(split, age>=minAge & age<=maxAge)
+    split <- transform(split, prop=pop/sum(pop))
+
+    return(split)
+
+}
+
+############################################################
 ## format_lifetable
 ############################################################
 
@@ -417,6 +446,35 @@ summarize_over_sims = function# Return the mean and 95% interval over sims
     }
 }
 
+############################################################
+## tally_years_simple
+############################################################
+
+tally_years_simple = function# Return years of life lived
+ 
+##description<< For specified follow-up times, return years lived
+##patterned after tally_cuminc_simple
+ 
+(followup,
+    ### Vector of follow-up times
+ etimes,
+    ### List of matrices of times to event
+ per=10000
+    ### Denominator for cumulative incidence
+) {
+    years <- lapply(followup,
+                     function(x) {
+                       sapply(names(etimes), function(y) {
+                         timesmat <- matrix(x,ncol=ncol(etimes[[y]]),
+                                            nrow=nrow(etimes[[y]]))
+                         cd_by_x <- pmin(timesmat, etimes[[y]])
+                         (colSums(cd_by_x)/nrow(cd_by_x))*per
+                       })
+                     })  
+    
+    names(years) <- followup
+    return(years)
+}
  
 ############################################################
 ## tally_cuminc_simple
