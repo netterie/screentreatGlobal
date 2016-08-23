@@ -17,7 +17,7 @@
 if (!'using_wrapper'%in%ls()) {
     warning('Empyting the workspace')
     rm(list=ls())
-    model_version <- 'tza_3b'
+    model_version <- 'tza_3c'
 
     setwd('~')
     if (grepl('jbirnbau', getwd())) rootdir <- getwd()
@@ -86,7 +86,7 @@ denom <- 100000
 ############################################################
 
 # Stage shift
-HR_advanced = 0.6/0.85
+HR_advanced = 0.35/0.85
 
 # Within stage effects
 instage_screen_benefit_early = 1
