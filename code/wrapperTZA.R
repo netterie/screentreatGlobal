@@ -29,7 +29,7 @@ rm(list=ls())
 # this wrapper file? Location is presumed to be in [area]/code,
 # e.g. diagnostics/code
 user_options_file = 'user_optionsTZAchemo1.R'
-input_data_file = 'input_tza_nobarrier.csv'
+input_data_file = 'input_tza_barrier-nobarrier.csv'
 
 # Should a copy of the input dataset be stored in the model folder?
 # It will be named input_data.csv, so describe it below in 
@@ -38,7 +38,7 @@ copy_data = TRUE
 
 # Establish model folders and describe the model
 model_type = 'screentreatGlobal'
-model_version = 'tza_3_chemo1'
+model_version = 'tza_3_chemo1c'
 model_description = c(country='Tanzania',
                       data_stage='Catherine lit search approx',
                       data_surv='CT for early, Galukande 2015 for advanced',
@@ -51,7 +51,7 @@ model_description = c(country='Tanzania',
                       treatments='None, Tamoxifen, Chemo',
                       efficacies='from EBCTCG',
                       life_table='IHME',
-                      other='like _3, but now chemo for ER-')
+                      other='like _3c, but now chemo for ER-')
 
 # Do you want to actually run the model now, or 
 # do everything in this file except run the model?
