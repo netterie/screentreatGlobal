@@ -2,8 +2,8 @@ name: little_screening_models
 account: hivbackcalc
 server: shinyapps.io
 appId: 116855
-bundleId: 518777
+bundleId: 525340
 url: https://hivbackcalc.shinyapps.io/little_screening_models/
-when: 1469773795.12824
+when: 1470438407.71114
 asMultiple: FALSE
 asStatic: FALSE

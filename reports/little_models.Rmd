@@ -215,6 +215,12 @@ _In the global setting, one way to get greater "bang for buck" in terms of the M
 
 _And/or: if it seems unreasonable to have the stage shift limit the MRR lower bound, then we need to make the within-stage shift a standard feature of the model and perhaps calibrate the model (to what? 15% mortality reduction for 15% stage shift?) to get reasonable within-stage shift parameters_
 
+**Age doesn't don't matter a whole lot**
+
+Incidence is age-specific, but the MRR doesn't reflect incidence. If our survival curves are not age-specific, the MRR will come out the same regardless of the age of the population.
+
+_Should we consider hazard ratios on survival by age? The CISNET models have age-specific survival if I remember correctly; we could get a rough sense of the impact of age on BC survival from the literature on SEER survival..._
+
 **Treatment distributions don't matter a whole lot**
 
 This little model of only the stage-shift effect of screening gives similar results to the complex model that allows for treatment distributions. This makes sense, since treatment distributions are just weights that define how much the treatment HRs impact m.e and m.a. 

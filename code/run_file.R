@@ -419,7 +419,12 @@ mcases <- data.frame(mcases,
 colnames(mcases) <- c('Trial', 'Time', 'id', 'N', 'Stage', 'Subgroup', 'Treatment')
 
 rcases <- cast(mcases, Time+Trial+Treatment~Stage+Subgroup, drop='id', value='N')
+rcases$Note <- ''
+rcases$Note[1]  <- paste('Numbers reflect population size of',
+                     nrow(ageclin),
+                     'women')
 
+stop()
 # Save
 write.csv(rcases,
           file.path(base_path, model_version, 'output', 
@@ -454,6 +459,40 @@ cat('\nConstructing results tables...')
                                       screen_ttcd,
                                       screen_CoD,
                                       per=denom)
+
+# New results - 10/3/16 - survival among clinically incident
+# Use these to make the graph
+
+    # Average cumulative inc across sims, per denom
+    control_cumincTmp <- llply(control_cuminc, .fun=function(x){colSums(x)/nrow(x)})
+    screen_cumincTmp <- llply(screen_cuminc, .fun=function(x){colSums(x)/nrow(x)})
+    # Compile into a data frame
+    survamongIncC <- transform(ldply(control_cumincTmp, rbind),Group='Control')
+    survamongIncS <- transform(ldply(screen_cumincTmp, rbind),Group='Screen')
+    survamongInc <- rbind(survamongIncC,survamongIncS)
+    survamongInc <- cast(melt(survamongInc), .id+variable~Group)
+    survamongInc <- rename(survamongInc, c('.id'='Time', 'variable'='Trial'))
+    # Now add the average # of incident cases across sims, per denom
+    incCases <- ddply(rcases,.(Time,Trial),function(x) {
+                          thesecols <- 
+                              !colnames(x)%in%c('Time', 'Trial', 'Treatment', 'Note')
+                          sum(rowSums(x[,thesecols],na.rm=TRUE))
+                                      })
+    incCases <- rename(incCases, c('V1'='Incidence'))
+    incCases <- transform(incCases, Incidence=Incidence*(denom/nrow(ageclin)))
+    survInc <- merge(survamongInc, incCases, all=TRUE)
+    survInc <- transform(survInc,
+                         Control=round(100*Control/Incidence),
+                         Screen=round(100*Screen/Incidence))
+    survInc <- subset(melt(survInc), variable!='Incidence')
+    survInc$Note <- ''
+    survInc$Note[1] <- 'Out of 100 incident cases, number surviving'
+
+# Save
+write.csv(survInc,
+          file.path(base_path, model_version, 'output', 
+                    'simpleSurvival.csv'),
+          row.names=FALSE)
 
 # Construct rows of the table
 
