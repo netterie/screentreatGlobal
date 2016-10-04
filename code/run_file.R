@@ -402,7 +402,7 @@ cases <- sapply_withnames(times, funX=function(x) {
                     cases <- ageclin<=(ageentry+x)
                     df <- ldply(sapply_withnames(ids, 
                                        funX=function(y, c) {
-                                           round(table(y[c])/ncol(c))
+                                           table(y[c])/ncol(c)
                                        }, cases), 
                             rbind)
                     df$times <- x
@@ -424,7 +424,6 @@ rcases$Note[1]  <- paste('Numbers reflect population size of',
                      nrow(ageclin),
                      'women')
 
-stop()
 # Save
 write.csv(rcases,
           file.path(base_path, model_version, 'output', 
