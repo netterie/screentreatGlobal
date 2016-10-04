@@ -17,15 +17,20 @@
 if (!'using_wrapper'%in%ls()) {
     warning('Empyting the workspace')
     rm(list=ls())
-    model_version <- 'tza_3_chemo1'
-    base_path <- '~/Documents/jbirnbau/screentreat/examples'
+
+    model_version <- 'tza_3_chemo1c'
+
+    setwd('~')
+    if (grepl('jbirnbau', getwd())) rootdir <- getwd()
+    if (grepl('jeanette', getwd())) rootdir <- file.path(getwd(), 'Documents', 'jbirnbau')
+    base_path <- file.path(rootdir, 'screentreatGlobal/examples')
 }
 
 ############################################################
 # Simulation features
 ############################################################
 country = 'tza'
-nsim = 2
+nsim = 100
 times = c(5,10)
 pop_size = 100000
 study_year = 2013 # Approx year of incidence/life table data
