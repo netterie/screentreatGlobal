@@ -18,7 +18,7 @@ if (!'using_wrapper'%in%ls()) {
     warning('Empyting the workspace')
     rm(list=ls())
 
-    model_version <- 'tza_3_chemo1cages30-49'
+    model_version <- 'tza_3_chemo1cages50-69'
 
     setwd('~')
     if (grepl('jbirnbau', getwd())) rootdir <- getwd()
@@ -61,7 +61,7 @@ if (standard_pop) age_file = file.path(rootdir, 'screentreatGlobal/data',
 # ages from 5-yr age groups
 if ('age_file'%in%ls()) {
     source(library_file)
-    ages <- format_age(age_file, minAge=30, maxAge=49)
+    ages <- format_age(age_file, minAge=50, maxAge=69)
     pop_chars = 
         list(age=ages,
              male=data.frame(male=c(0), prop=c(1)))
@@ -128,7 +128,7 @@ control_notreat = data.frame(stage=c(rep('Early',2),
 ocd_HR = 1
 
 ############################################################
-# Run model
+# Copy run file and run model
 ############################################################
 file.copy(file.path(rootdir, '/screentreatGlobal/code/run_file.R'),
           file.path(base_path, model_version, 'input', 'run_file.R'),

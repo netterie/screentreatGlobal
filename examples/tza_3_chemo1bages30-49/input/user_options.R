@@ -130,6 +130,9 @@ ocd_HR = 1
 ############################################################
 # Run model
 ############################################################
+file.copy(file.path(rootdir, '/screentreatGlobal/code/run_file.R'),
+          file.path(base_path, model_version, 'input', 'run_file.R'),
+          overwrite=TRUE)
 
 source(file.path(rootdir, '/screentreatGlobal/code/run_file.R'))
 
