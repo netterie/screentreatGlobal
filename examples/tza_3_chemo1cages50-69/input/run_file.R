@@ -495,12 +495,8 @@ cat('\nConstructing results tables...')
     survamongInc <- cast(melt(survamongInc), .id+variable~Group)
     survamongInc <- rename(survamongInc, c('.id'='Time', 'variable'='Trial'))
     # Now add the average # of incident cases across sims, per denom
-    incCases <- ddply(rcases,.(Time,Trial),function(x) {
-                          thesecols <- 
-                              !colnames(x)%in%c('Time', 'Trial', 'Treatment', 'Note')
-                          sum(rowSums(x[,thesecols],na.rm=TRUE))
-                                      })
-    incCases <- rename(incCases, c('V1'='Incidence'))
+    incCases <- ddply(rcases,.(Time,Trial),summarize, 
+                      Incidence=sum(Total, na.rm=TRUE))
     incCases <- transform(incCases, Incidence=Incidence*(denom/nrow(ageclin)))
     survInc <- merge(survamongInc, incCases, all=TRUE)
     survInc <- transform(survInc,
