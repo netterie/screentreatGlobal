@@ -489,20 +489,23 @@ cat('\nConstructing results tables...')
     control_cumincTmp <- llply(control_cuminc, .fun=function(x){colSums(x)/nrow(x)})
     screen_cumincTmp <- llply(screen_cuminc, .fun=function(x){colSums(x)/nrow(x)})
     # Compile into a data frame
-    survamongIncC <- transform(ldply(control_cumincTmp, rbind),Group='Control')
-    survamongIncS <- transform(ldply(screen_cumincTmp, rbind),Group='Screen')
+    survamongIncC <- transform(ldply(control_cumincTmp, rbind),Group='ControlCuminc')
+    survamongIncS <- transform(ldply(screen_cumincTmp, rbind),Group='ScreenCuminc')
     survamongInc <- rbind(survamongIncC,survamongIncS)
     survamongInc <- cast(melt(survamongInc), .id+variable~Group)
     survamongInc <- rename(survamongInc, c('.id'='Time', 'variable'='Trial'))
     # Now add the average # of incident cases across sims, per denom
-    incCases <- ddply(rcases,.(Time,Trial),summarize, 
+    incCases <- ddply(rcases,.(Time,Trial,Group),summarize, 
                       Incidence=sum(Total, na.rm=TRUE))
-    incCases <- transform(incCases, Incidence=Incidence*(denom/nrow(ageclin)))
+    incCases <- transform(incCases, 
+                          Group=paste0(Group,'Inc'),
+                          Incidence=Incidence*(denom/nrow(ageclin)))
+    incCases <- cast(incCases, Time+Trial~Group)
     survInc <- merge(survamongInc, incCases, all=TRUE)
     survInc <- transform(survInc,
-                         Control=round(100*(Incidence-Control)/Incidence),
-                         Screen=round(100*(Incidence-Screen)/Incidence))
-    survInc <- subset(melt(survInc), variable!='Incidence')
+                         Control=round(100*(ControlInc-ControlCuminc)/ControlInc),
+                         Screen=round(100*(ScreenInc-ScreenCuminc)/ScreenInc))
+    survInc <- subset(melt(survInc), variable%in%c('Control', 'Screen'))
     survInc$Note <- ''
     survInc$Note[1] <- 'Out of 100 incident cases, number surviving'
 
