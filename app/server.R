@@ -10,17 +10,58 @@ shinyServer(function(input, output, session) {
   })
   
   #TO MAKE DYNAMIC
+  output$debug <- renderPrint({
+    as.character(treattumor_props2(input$prop_ERpos,
+                                  input$prop_Nodepos,
+                                  input$tam.elig.control,
+                                  input$tam.prop.control,
+                                  input$chemo.elig.control,
+                                  input$chemo.prop.control))
+  })
   output$a0t <- renderUI({
-      textInput('prop.a0.t', 'Advanced cases', "0.06,0.14,0.24,0.56")
+    treatvec <- treattumor_props(as.numeric(input$prop_ERpos),
+                                             as.numeric(input$prop_Nodepos),
+                                             input$tam.elig.control,
+                                             as.numeric(input$tam.prop.control),
+                                             input$chemo.elig.control,
+                                             as.numeric(input$chemo.prop.control))
+    #textInput('prop.a0.t', 'Advanced cases', "0.06,0.14,0.24,0.56")
+      textInput('prop.a0.t', 'Advanced cases', 
+                paste(as.character(treatvec),collapse=','))
   })
   output$e0t <- renderUI({
-    textInput('prop.e0.t', 'Early cases', "0.06,0.14,0.24,0.56")
+    treatvec <- treattumor_props(as.numeric(input$prop_ERpos),
+                                 as.numeric(input$prop_Nodepos),
+                                 input$tam.elig.control,
+                                 as.numeric(input$tam.prop.control),
+                                 input$chemo.elig.control,
+                                 as.numeric(input$chemo.prop.control))
+    #textInput('prop.e0.t', 'Early cases', "0.06,0.14,0.24,0.56")
+    textInput('prop.e0.t', 'Advanced cases', 
+              paste(as.character(treatvec),collapse=','))
   })
   output$a1t <- renderUI({
-    textInput('prop.a1.t', 'Advanced cases', "0.3,0,0,0.7")
+    treatvec <- treattumor_props(as.numeric(input$prop_ERpos),
+                                 as.numeric(input$prop_Nodepos),
+                                 input$tam.elig.interv,
+                                 as.numeric(input$tam.prop.interv),
+                                 input$chemo.elig.interv,
+                                 as.numeric(input$chemo.prop.interv))
+    #textInput('prop.a1.t', 'Advanced cases', "0.3,0,0,0.7")
+    textInput('prop.a1.t', 'Advanced cases', 
+              paste(as.character(treatvec),collapse=','))
   })
   output$e1t <- renderUI({
-    textInput('prop.e1.t', 'Early cases', "0.3,0,0,0.7")
+    treatvec <- treattumor_props(as.numeric(input$prop_ERpos),
+                                 as.numeric(input$prop_Nodepos),
+                                 input$tam.elig.interv,
+                                 as.numeric(input$tam.prop.interv),
+                                 input$chemo.elig.interv,
+                                 as.numeric(input$chemo.prop.interv))
+    #textInput('prop.e1.t', 'Early cases', "0.3,0,0,0.7")
+    textInput('prop.e1.t', 'Advanced cases', 
+              paste(as.character(treatvec),collapse=','))
+    
   })
   
   output$resultsTable <- renderPrint({

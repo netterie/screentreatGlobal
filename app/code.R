@@ -122,6 +122,66 @@ mrr.annualInc = function(N, p.inc, p.a, p.s, m.a, m.e, k, h,
   return(dfres)
 }
 
+# Convert inputs into the default treatment-tumor subgroup proportions
+# Currently for these 9 groups:
+#1,2,3 ERneg.Tam, ERneg.Chemo, ERneg.None, 
+#4,5,6 ERposNodepos.Tam, ERposNodepos.TamChemo, ERposNodepos.None, 
+#7,8 ERposNodeneg.Tam, ERposNodeneg.Chemo, ERposNodeneg.None 
+
+treattumor_props2 <- function(prop_ERpos,
+                             prop_Nodepos,
+                             tam.elig,
+                             tam.prop,
+                             chemo.elig,
+                             chemo.prop) {
+  return(c(prop_ERpos,
+           prop_Nodepos,
+           tam.elig,
+           tam.prop,
+           chemo.elig,
+           chemo.prop))
+}
+  
+treattumor_props <- function(prop_ERpos,
+                             prop_Nodepos,
+                             tam.elig,
+                             tam.prop,
+                             chemo.elig,
+                             chemo.prop) {
+  # 1,2,3 ERneg.Tam, ERneg.Chemo, ERneg.None
+  prop_ERneg <- 1-prop_ERpos
+  ERneg.Tam <- ifelse(tam.elig=='All',prop_ERneg*tam.prop,0)
+  ERneg.Chemo <- prop_ERneg*chemo.prop
+  ERneg.None <- prop_ERneg-ERneg.Tam-ERneg.Chemo
+  # 4,5,6 ERposNodepos.Tam, ERposNodepos.TamChemo, ERposNodepos.None
+  # Here, we do Chemo first, because we interpret the Tamoxifen proportion
+  # as including the Tam-Chemo people
+  prop_ERposNodepos <- prop_ERpos*prop_Nodepos
+  ERposNodepos.TamChemo <- ifelse(chemo.elig!='ERneg',
+                                  prop_ERposNodepos*chemo.prop*tam.prop)
+  ERposNodepos.Tam <- prop_ERposNodepos*tam.prop-ERposNodepos.TamChemo
+  ERposNodepos.None <- prop_ERposNodepos-ERposNodepos.TamChemo-ERposNodepos.Tam
+  # 7,8 ERposNodeneg.Tam, ERposNodeneg.None
+  prop_ERposNodeneg <- prop_ERpos*(1-prop_Nodepos)
+  ERposNodeneg.TamChemo <- ifelse(chemo.elig=='All', 
+                                  prop_ERposNodeneg*chemo.prop*tam.prop, 0)
+  ERposNodeneg.Tam <- prop_ERposNodeneg*tam.prop-ERposNodeneg.TamChemo
+  ERposNodeneg.None <- prop_ERposNodeneg-ERposNodeneg.Tam-ERposNodeneg.TamChemo
+  
+  names <- c('ERneg.Tam', 'ERneg.Chemo', 'ERneg.None',
+           'ERposNodepos.Tam', 'ERposNodepos.TamChemo', 'ERposNodepos.None',
+           'ERposNodeneg.Tam','ERposNodeneg.TamChemo', 'ERposNodeneg.None')
+  all <- c(ERneg.Tam, ERneg.Chemo, ERneg.None,
+           ERposNodepos.Tam, ERposNodepos.TamChemo, ERposNodepos.None,
+           ERposNodeneg.Tam, ERposNodeneg.TamChemo, ERposNodeneg.None
+           )
+  if ((sum(all)-1)<=.0001) return(all) else stop(paste('Error in treattumor_props: sum is',
+                                               sum(all)))
+  return(all)
+}
+
+
+
 # OLD
 # I think this is a less precise version
 # Input needs to be sort of half cumulative incidence

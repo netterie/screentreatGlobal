@@ -42,10 +42,10 @@ shinyUI(fluidPage(
              sliderInput("prop_a", label = "Proportion advanced",
                          min=0, max=1, step=0.01, value=0.85),
              # Proportion ER+
-             sliderInput("prop_a", label = "Proportion ER positive",
+             sliderInput("prop_ERpos", label = "Proportion ER positive",
                          min=0, max=1, step=0.01, value=0.30),
              # Proportion node+
-             sliderInput("prop_a", label = "Proportion node positive",
+             sliderInput("prop_Nodepos", label = "Proportion node positive",
                          min=0, max=1, step=0.01, value=0),
              #Numeric Inputs
              numericInput("min_val", "Enter Minimum Value", 1993),
@@ -143,14 +143,16 @@ shinyUI(fluidPage(
              br(),
              h5('TUMOR-TREATMENT GROUPS'),
              textInput('treat.vec', 'Treatment names (separate by commas)', 
-                       "Tam.ERp,Tam.ERn,None.ERp,None.ERn"),
+             #          "Tam.ERp,Tam.ERn,None.ERp,None.ERn"
+                       "ERneg.Tam, ERneg.Chemo, ERneg.None,ERposNodepos.Tam, ERposNodepos.TamChemo, ERposNodepos.None,ERposNodeneg.Tam, ERposNodeneg.TamChemo, ERposNodeneg.None"
+             ),
              br(),
              h5('EFFICACIES BY TUMOR-TREATMENT GROUP'),
              p('Hazard ratios (HRs) indicate the survival benefit of treatment 
                 in that group, e.g., HR=1 means no benefit, whereas HR=0.7 indicates 
                 a 30% survival benefit.'),
              textInput('treat.hr', 'Treatment hazard ratios (separated by commas)', 
-                       "0.7,1,1,1"),
+                       "1,0.775,1,0.7,0.5425,1,0.7,1,1"),
              br(),
              h5('CONTROL TREATMENT PROPORTIONS'),
              uiOutput('a0t'),
@@ -162,6 +164,7 @@ shinyUI(fluidPage(
              ),
     "Results",
     tabPanel("Summary Table",
+              verbatimTextOutput('debug'),
               verbatimTextOutput('resultsTable')
              ),
     tabPanel("Survival Graph",
