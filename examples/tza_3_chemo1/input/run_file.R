@@ -394,15 +394,18 @@ screen_ttd <- sapply_withnames(screen_ageCD,
 # Summarize case structure
 ############################################################
 
+names(times) <- as.character(times)
 ids <- sapply_withnames(control_treatments,
                         funX=return_value_from_id,
                         treat_chars, 'txSSid')
-names(times) <- as.character(times)
+idsScr <- sapply_withnames(screen_treatments,
+                        funX=return_value_from_id,
+                        treat_chars, 'txSSid')
 cases <- sapply_withnames(times, funX=function(x) {
                     cases <- ageclin<=(ageentry+x)
                     df <- ldply(sapply_withnames(ids, 
                                        funX=function(y, c) {
-                                           round(table(y[c])/ncol(c))
+                                           table(y[c])/ncol(c)
                                        }, cases), 
                             rbind)
                     df$times <- x
@@ -411,14 +414,34 @@ cases <- sapply_withnames(times, funX=function(x) {
                                 })
 cases <- ldply(cases, rbind)
 cases[is.na(cases)] <- 0
+cases$Group='Control'
 
-mcases <- melt(cases, id.vars=c('.id', 'times'))
+casesScr <- sapply_withnames(times, funX=function(x) {
+                    cases <- ageclin<=(ageentry+x)
+                    df <- ldply(sapply_withnames(idsScr, 
+                                       funX=function(y, c) {
+                                           table(y[c])/ncol(c)
+                                       }, cases), 
+                            rbind)
+                    df$times <- x
+                    return(df)
+                    #round(table(SSids[cases])/ncol(cases))
+                                })
+casesScr <- ldply(casesScr, rbind)
+casesScr[is.na(casesScr)] <- 0
+casesScr$Group='Screen'
+
+cases <- rbind(cases, casesScr)
+
+mcases <- melt(cases, id.vars=c('.id', 'times','Group'))
 colnames(mcases)[which(colnames(mcases)=='.id')] <- 'trial'
 mcases <- data.frame(mcases, 
                      do.call(rbind, strsplit(as.character(mcases$variable), '\\.')))
-colnames(mcases) <- c('Trial', 'Time', 'id', 'N', 'Stage', 'Subgroup', 'Treatment')
+colnames(mcases) <- c('Trial', 'Time', 'Group', 
+                      'id', 'N', 'Stage', 'Subgroup', 'Treatment')
 
-rcases <- cast(mcases, Time+Trial+Treatment~Stage+Subgroup, drop='id', value='N')
+rcases <- cast(mcases, Group+Time+Trial+Treatment~Stage+Subgroup, drop='id', value='N')
+rcases$Total <- rowSums(rcases[,!colnames(rcases)%in%c('Group','Time','Trial','Treatment')], na.rm=TRUE)
 rcases$Note <- ''
 rcases$Note[1]  <- paste('Numbers reflect population size of',
                      nrow(ageclin),
@@ -462,7 +485,7 @@ cat('\nConstructing results tables...')
 # New results - 10/3/16 - survival among clinically incident
 # Use these to make the graph
 
-    # Average cumulative inc across sims, per denom
+    # Average cumulative inc of mortality across sims, per denom
     control_cumincTmp <- llply(control_cuminc, .fun=function(x){colSums(x)/nrow(x)})
     screen_cumincTmp <- llply(screen_cuminc, .fun=function(x){colSums(x)/nrow(x)})
     # Compile into a data frame
@@ -472,17 +495,13 @@ cat('\nConstructing results tables...')
     survamongInc <- cast(melt(survamongInc), .id+variable~Group)
     survamongInc <- rename(survamongInc, c('.id'='Time', 'variable'='Trial'))
     # Now add the average # of incident cases across sims, per denom
-    incCases <- ddply(rcases,.(Time,Trial),function(x) {
-                          thesecols <- 
-                              !colnames(x)%in%c('Time', 'Trial', 'Treatment', 'Note')
-                          sum(rowSums(x[,thesecols],na.rm=TRUE))
-                                      })
-    incCases <- rename(incCases, c('V1'='Incidence'))
+    incCases <- ddply(rcases,.(Time,Trial),summarize, 
+                      Incidence=sum(Total, na.rm=TRUE))
     incCases <- transform(incCases, Incidence=Incidence*(denom/nrow(ageclin)))
     survInc <- merge(survamongInc, incCases, all=TRUE)
     survInc <- transform(survInc,
-                         Control=round(100*Control/Incidence),
-                         Screen=round(100*Screen/Incidence))
+                         Control=round(100*(Incidence-Control)/Incidence),
+                         Screen=round(100*(Incidence-Screen)/Incidence))
     survInc <- subset(melt(survInc), variable!='Incidence')
     survInc$Note <- ''
     survInc$Note[1] <- 'Out of 100 incident cases, number surviving'
