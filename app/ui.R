@@ -2,7 +2,7 @@ library(shiny)
 
 shinyUI(fluidPage(
   
-  titlePanel("Welcome to the cancer screening and treatment impact model"),
+  titlePanel("Welcome to the cancer early detection and treatment impact model"),
   
   navlistPanel(
     tabPanel("Introduction",
@@ -16,13 +16,13 @@ shinyUI(fluidPage(
              h5('Standard of Care: "Control" Scenario'),
              p('Because chemotherapy treatment is logistically and financially difficult
                 in Tanzania, women typically either receive no adjuvant treatment (80%) or
-                Tamoxifen (20%). However, the Tamoxifen is not targeted to the 30% of 
-                women who are ER+. This means that some ER- receive Tamoxifen and but do
+                endocrine therapy (20%). However, the endocrine therapy is not targeted to the 30% of 
+                women who are ER+. This means that some ER- receive endocrine therapy and but do
                not benefit from it.'),
              h5('Standard of Care: "Intervention" Scenario'),
-             p('The intervention modeled is ER screening, which leads to Tamoxifen being
+             p('The intervention modeled is ER screening, which leads to endocrine therapy being
                administered only to the 30% of women who are ER+. All of these women
-               receive a survival benefit from the Tamoxifen.')
+               receive a survival benefit from the endocrine therapy.')
     ),
     "Natural History Parameters",
     tabPanel("Cancer Incidence",
@@ -46,10 +46,7 @@ shinyUI(fluidPage(
                          min=0, max=1, step=0.01, value=0.30),
              # Proportion node+
              sliderInput("prop_Nodepos", label = "Proportion node positive",
-                         min=0, max=1, step=0.01, value=0),
-             #Numeric Inputs
-             numericInput("min_val", "Enter Minimum Value", 1993),
-             numericInput("max_val", "Enter Maximum Value", 2013)
+                         min=0, max=1, step=0.01, value=0)
              ),
     tabPanel("Stage-Specific Survival",
               h4('Select a year, k, by which you will specify the proportion of cases 
@@ -78,14 +75,14 @@ shinyUI(fluidPage(
               h4('Specify who is eligible for each treatment, 
                 and what proportion of eligible cases receive it.'),
               p('The current standard of care in Tanzania is that about 20% of all women 
-                  receive Tamoxifen, even though only the cases who are 
+                  receive endocrine therapy, even though only the cases who are 
                   estrogen-receptor positive (ER+) can actually benefit from it.'),
               br(),
-              h5('TAMOXIFEN'),
-              radioButtons("tam.elig.control", "Who is eligible for Tamoxifen?",
+              h5('ENDOCRINE THERAPY'),
+              radioButtons("tam.elig.control", "Who is eligible for endocrine therapy?",
                            c("All" = 'All',
                              "ER+ only" = 'ERpos')),
-              sliderInput('tam.prop.control', label='What proportion of eligible women receive Tamoxifen?', 
+              sliderInput('tam.prop.control', label='What proportion of eligible women receive endocrine therapy?', 
                           0.20, min = 0, max = 1, step = .01),
               br(),
               h5('CHEMOTHERAPY'),
@@ -100,14 +97,14 @@ shinyUI(fluidPage(
     tabPanel("Intervention Scenario",
              h4('Specify who is eligible for each treatment, 
                 and what proportion of eligible cases receive it.'),
-             p('In the default intervention, all ER+ women receive Tamoxifen.'),
+             p('In the default intervention, all ER+ women receive endocrine therapy.'),
              br(),
-             h5('TAMOXIFEN'),
-             radioButtons("tam.elig.interv", "Who is eligible for Tamoxifen?",
+             h5('ENDOCRINE THERAPY'),
+             radioButtons("tam.elig.interv", "Who is eligible for endocrine therapy?",
                           c("All" = 'All',
                             "ER+ only" = 'ERpos'),
                           selected='ERpos'),
-             sliderInput('tam.prop.interv', label='What proportion of eligible women receive Tamoxifen?', 
+             sliderInput('tam.prop.interv', label='What proportion of eligible women receive endocrine therapy?', 
                          1.0, min = 0, max = 1, step = .01),
              br(),
              h5('CHEMOTHERAPY'),

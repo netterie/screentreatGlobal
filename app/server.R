@@ -1,13 +1,10 @@
 # Setup: libraries and functions
+# A note about deploying: 
+# rsconnect::deployApp('/Users/jeanette/Documents/jbirnbau/screentreatGlobal/app/', account='screeningandtreatment', appName='main')
 library(shiny)
 source('code.R')
 
 shinyServer(function(input, output, session) {
-  
-  #make dynamic slider
-  output$slider <- renderUI({
-    sliderInput("inSlider", "Slider", min=input$min_val, max=input$max_val, value=2000)
-  })
   
   #TO MAKE DYNAMIC
   output$debug <- renderPrint({
