@@ -623,7 +623,13 @@ write.csv(survInc,
                  onecell=TRUE,
                  numdec=1)
 
-    stop()
+    # Base years of life saved in the control arms
+    r9.1 <- lapply(control_years,
+                   summarize_over_sims,
+                   funX='mean',
+                   onecell=TRUE,
+                   numdec=0)
+
 # Compile across follow-up times
 
 new_table <- lapply(names(control_cuminc), 
@@ -635,6 +641,7 @@ new_table <- lapply(names(control_cuminc),
                         r4[[x]],r5[[x]],r6[[x]],
                         empty_row,
                         r7[[x]], r8[[x]],
+                        r9.1[[x]],
                         empty_row,
                         r9[[x]], r10[[x]]
                         ),row.names=NULL)
@@ -646,10 +653,12 @@ new_table <- lapply(names(control_cuminc),
                                              'MRRs across trials', '', '', 
                                              'ARRs within trials', 
                                              'ARRs across trials', '', '',
+                                             'Years lived',
                                              'Years saved across trials', '', ''),
                                    SubMeasure=c('','No screening', 'Screening', 
                                                 '', '', 'No screening', 'Screening', 
                                                 '', '', 'No screening', 'Screening',
+                                                'No screening',
                                                 '', 'No screening', 'Screening'),
                                    tab,
                                    check.names=FALSE)
