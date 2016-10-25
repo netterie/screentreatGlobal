@@ -9,36 +9,26 @@ exp.rate = function(cum.surv, year=10, haz=1) {log(cum.surv)/(-year*haz)}
 #    under intervention, 30% get HR=0.7 due to perfect targeting
 #    of the ER+
 
-# General mortality function
-mort.k = function(inc, p.a, p.s, m, k, p.t, h,
-                  advanced=TRUE, shift=FALSE) {
-  # Number of treatments
-  n = length(p.t)
-  # Proportion dying in treatment group i, year k
-  prop.mort.k = 1-exp(rep(-k*m,n)*h)
-  # Weight by treatment group proportions
-  mort.k = sum(p.t*prop.mort.k)
-  # Scale by incidence, stage proportions and stage shift
-  if (advanced) {
-    s = p.a 
-    c = -1
-  } else {
-    s = 1-p.a
-    c = 1
-  }
-  if (shift) s = s + c*p.a*p.s
-  return(inc*s*mort.k)
-}
 
 # Instead of cumulative mortality, the # dying IN year k
+# Using a half-year correction, to account for the
+# accumulation of incidence across the year
 mort.pdf = function(k, inc, p.a, p.s, m, p.t, h,
                     advanced=TRUE, shift=FALSE) {
+  # Original k
+  korig = k
+  # Adjustment factor
+  adjust = 0.75
+  # End period - with half-year adjustment
+  k = max(korig-adjust,0)
+  # Start period - the year before
+  kminus1 = max(korig-1-adjust,0)
   # Number of treatments
   n = length(p.t)
   # Proportion dying in treatment group i, year k
   cum.mort.k = 1-exp(rep(-k*m,n)*h)
   # Proportion who died in k-1 or before
-  cum.mort.kminus1 = 1-exp(rep(-(k-1)*m,n)*h)
+  cum.mort.kminus1 = 1-exp(rep(-(kminus1)*m,n)*h)
   # Proportion IN year k
   prop.mort.k = cum.mort.k-cum.mort.kminus1
   # Weight by treatment group proportions
@@ -72,6 +62,32 @@ yll.annualInc = function(inc,mort.vec) {
 
 
 # Trying a function that uses annualized incidence
+# For debug:
+if (1==0) {
+    inc=60
+    N=100000
+    p.a=0.85
+    p.s=1
+    m.a=exp.rate(0.35, year=5)
+    m.e=exp.rate(0.8, year=5)
+    k=5
+    h=as.numeric(unlist(strsplit(
+                       '1, 0.775, 1, 0.5425, 0.7, 0.775, 1'
+                                 ,",")))
+    p.a0.t=as.numeric(unlist(strsplit(
+                                      '0.1,0,0.4,0,0.1,0,0.4'
+                                      ,",")))
+    p.e0.t=as.numeric(unlist(strsplit(
+                                      '0,0,0.5,0,0.5,0,0'
+                                      ,",")))
+    p.a1.t=as.numeric(unlist(strsplit(
+                                      '0.1,0,0.4,0,0.1,0,0.4'
+                                      ,",")))
+    p.e1.t=as.numeric(unlist(strsplit(
+                                     '0,0,0.5,0,0.5,0,0' 
+                                      ,",")))
+}
+
 mrr.annualInc = function(N, p.inc, p.a, p.s, m.a, m.e, k, h, 
                          p.a0.t, p.e0.t, p.a1.t, p.e1.t) {
   # Annual incidence
@@ -100,49 +116,138 @@ mrr.annualInc = function(N, p.inc, p.a, p.s, m.a, m.e, k, h,
   
   # Results
   dfres <- data.frame(Year=k,
-                      Statistic=c('Mort',
-                                  'Women Alive',
-                                  'Surv',
-                                  'MRR',
-                                  'ARR',
-                                  'Years of Life Saved'),
+                      Statistic=c('# of BC deaths',
+                                  '# of survivors',
+                                  'Percent surviving',
+                                  'Percent reduction in BC deaths',
+                                  '# of lives saved',
+                                  'Years of life saved'),
                       Control=c(denominator,
                                 inc*k-denominator,
-                                (inc*k-denominator)/(inc*k),
-                                1,
+                                100*(inc*k-denominator)/(inc*k),
+                                0,
                                 0,
                                 0),
                       Intervention=c(numerator,
                                      inc*k-numerator,
-                                     (inc*k-numerator)/(inc*k),
-                                     round(numerator/denominator,3),
+                                     100*(inc*k-numerator)/(inc*k),
+                                     round(100*(1-(numerator/denominator)),3),
                                      round(denominator-numerator,3),
                                      round(intervention.yll-control.yll,3))
   )
   return(dfres)
 }
 
-# Convert inputs into the default treatment-tumor subgroup proportions
-# Currently for these 9 groups:
-#1,2,3 ERneg.Tam, ERneg.Chemo, ERneg.None, 
-#4,5,6 ERposNodepos.Tam, ERposNodepos.TamChemo, ERposNodepos.None, 
-#7,8 ERposNodeneg.Tam, ERposNodeneg.Chemo, ERposNodeneg.None 
 
-treattumor_props2 <- function(prop_ERpos,
-                             prop_Nodepos,
+# Just return inputs
+print_vec <- function(...) { return(unlist(list(...))) }
+  
+# Convert inputs into the default treatment-tumor subgroup proportions
+# For these 7 groups:
+# 1,2,3 ERneg.Tam, ERneg.Chemo, ERneg.None
+# 4,5,6,7 ERpos.TamChemo, ERpos.Tam, ERpos.Chemo, ERpos.None
+# For debugging:
+if (1==0) {
+    prop_ERpos=0.5
+    tam.elig='ERpos'
+    tam.prop=1
+    chemo.elig='ERnegERposAdv'
+    chemo.prop=1
+    treattumor_props(0.5, 'All', 0.2, 'None', 0)
+    treattumor_props(0.5, 'ERpos', 1, 'None', 0)
+    treattumor_props(0.5, 'ERpos', 1, 'ERnegERposAdv', 1)
+}
+
+treattumor_props <- function(prop_ERpos,
                              tam.elig,
                              tam.prop,
                              chemo.elig,
                              chemo.prop) {
-  return(c(prop_ERpos,
-           prop_Nodepos,
-           tam.elig,
-           tam.prop,
-           chemo.elig,
-           chemo.prop))
+  # 1,2,3 ERneg.Tam, ERneg.Chemo, ERneg.None
+  prop_ERneg <- 1-prop_ERpos
+  ERneg.Tam <- ifelse(tam.elig=='All',prop_ERneg*tam.prop,0)
+  ERneg.Chemo <- prop_ERneg*chemo.prop
+  ERneg.None <- prop_ERneg-ERneg.Tam-ERneg.Chemo
+  # 4,5,6,7 ERpos.TamChemo, ERpos.Tam, ERpos.Chemo, ERpos.None
+  # Here, we do Chemo first, because we interpret the Tamoxifen proportion
+  # as including the Tam-Chemo people
+  ERpos.TamChemo <- ifelse(chemo.elig=='ERnegERposAdv' | chemo.elig=='All',
+                                  prop_ERpos*chemo.prop*tam.prop,
+                                  0)
+  ERpos.Tam <- prop_ERpos*tam.prop-ERpos.TamChemo
+  ERpos.Chemo <- prop_ERpos*chemo.prop-ERpos.TamChemo
+  ERpos.None <- prop_ERpos-ERpos.TamChemo-ERpos.Tam-ERpos.Chemo
+  names <- c(
+            'ERneg.Tam', 'ERneg.Chemo', 'ERneg.None',          
+            'ERpos.TamChemo', 'ERpos.Tam', 'ERpos.Chemo', 'ERpos.None'
+            )
+  all <- c(
+            ERneg.Tam, ERneg.Chemo, ERneg.None,
+            ERpos.TamChemo, ERpos.Tam, ERpos.Chemo, ERpos.None
+           )
+  names(all) <- names
+  if ((sum(all)-1)<=.0001) return(all) else stop(paste('Error in treattumor_props: sum is',
+                                               sum(all)))
+  return(all)
 }
-  
-treattumor_props <- function(prop_ERpos,
+
+
+############################################################
+# OLD
+
+# Mortality in year k - no half-year adjustment
+mort.pdf.noadjust = function(k, inc, p.a, p.s, m, p.t, h,
+                    advanced=TRUE, shift=FALSE) {
+  # Number of treatments
+  n = length(p.t)
+  # Proportion dying in treatment group i, year k
+  cum.mort.k = 1-exp(rep(-k*m,n)*h)
+  # Proportion who died in k-1 or before
+  cum.mort.kminus1 = 1-exp(rep(-(k-1)*m,n)*h)
+  # Proportion IN year k
+  prop.mort.k = cum.mort.k-cum.mort.kminus1
+  # Weight by treatment group proportions
+  mort.k = sum(p.t*prop.mort.k)
+  # Scale by incidence, stage proportions and stage shift
+  if (advanced) {
+    s = p.a 
+    c = -1
+  } else {
+    s = 1-p.a
+    c = 1
+  }
+  if (shift) s = s + c*p.a*p.s
+  return(inc*s*mort.k)
+}
+
+# Cumulative mortality function
+mort.k = function(inc, p.a, p.s, m, k, p.t, h,
+                  advanced=TRUE, shift=FALSE) {
+  # Number of treatments
+  n = length(p.t)
+  # Proportion dying in treatment group i, year k
+  prop.mort.k = 1-exp(rep(-k*m,n)*h)
+  # Weight by treatment group proportions
+  mort.k = sum(p.t*prop.mort.k)
+  # Scale by incidence, stage proportions and stage shift
+  if (advanced) {
+    s = p.a 
+    c = -1
+  } else {
+    s = 1-p.a
+    c = 1
+  }
+  if (shift) s = s + c*p.a*p.s
+  return(inc*s*mort.k)
+}
+
+# Convert inputs into the default treatment-tumor subgroup proportions
+# With a node-positive parameter
+# Currently for these 9 groups:
+#1,2,3 ERneg.Tam, ERneg.Chemo, ERneg.None, 
+#4,5,6 ERposNodepos.Tam, ERposNodepos.TamChemo, ERposNodepos.None, 
+#7,8,9 ERposNodeneg.Tam, ERposNodeneg.Chemo, ERposNodeneg.None 
+treattumor_props_node <- function(prop_ERpos,
                              prop_Nodepos,
                              tam.elig,
                              tam.prop,
@@ -182,7 +287,8 @@ treattumor_props <- function(prop_ERpos,
 
 
 
-# OLD
+
+
 # I think this is a less precise version
 # Input needs to be sort of half cumulative incidence
 mrr = function(N, p.inc, p.a, p.s, m.a, m.e, k, h, 
