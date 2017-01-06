@@ -26,21 +26,22 @@ shinyUI(fluidPage(
     ),
     "Natural History",
     tabPanel("Cancer Incidence",
-             h4('Enter the expected annual incidence per 100,000 women and the proportion 
+             h4('Enter the expected annual incidence per 100,000 women and the percent 
                   of cancers that are ER positive.'),
              p('Annual incidence in Tanzania is patterned after Uganda, 
-                where ther are about 60 cases per year among 100,000 women ages 30-49. 
-                About 50% are ER positive.'),
+                where there are about 60 cases per year among 100,000 women ages 30-49. 
+                The literature suggests that about 50% of Tanzanian breast 
+                cancers are ER positive.'),
              # Incidence
              numericInput('incidence', label='Annual incidence per 100,000', 
                           60, min = 0, max = 100000, step = NA, 
                           width = NULL),
-             # Proportion ER+
-             sliderInput("prop_ERpos", label = "Proportion ER positive",
-                         min=0, max=1, step=0.01, value=0.50)
+             # Percent ER+
+             sliderInput("prop_ERpos", label = "Percent ER positive",
+                         min=0, max=100, step=1, value=50)
              ),
     tabPanel("Stage-Specific Survival",
-              h4('Select a year, k, by which you will specify the proportion of cases 
+              h4('Select a year, k, by which you will specify the percent of cases 
                 surviving at k years after diagnosis, or "baseline survival."'),
               p('Baseline survival should typically be survival in the absence of 
                 systemic treatment, but it can be treated survival if the 
@@ -49,40 +50,40 @@ shinyUI(fluidPage(
               p('Data from Uganda suggest that advanced-stage cases in Tanzania may 
                 have a 5-year survival rate of 35%. Given the low incidence of 
                 early-stage cancer in Tanzania and similar countries, survival data 
-                are sparse for early stage caes. We approximate early-stage survival 
+                are sparse for early stage cases. We approximate early-stage survival 
                 using historical data from the US in the 1940s, which puts 5-year survival 
                 of localized cases at 80%.'),
              selectInput('year.surv', label='Year of survival statistic, k', 
                          choices=c(5,10), selected=5),
              
              sliderInput('surv.adv', label='Advanced cases: baseline survival at k years', 
-                         0.35, min = 0, max = 1, step = .01),
+                         35, min = 0, max = 100, step = 1),
              
              sliderInput('surv.early', label='Early cases: baseline survival at k years', 
-                         0.80, min = 0, max = 1, step = .01)
+                         80, min = 0, max = 100, step = 1)
              ),
     "Impact of Early Detection",
     tabPanel("Stage Distributions",
-              h4('Enter the proportion of advanced-stage cases in the control and intervention scenarios.'),
-              p('In the control scenario, this is the typical proportion of cases who are 
+              h4('Enter the percent of advanced-stage cases in the control and intervention scenarios.'),
+              p('In the control scenario, this is the typical percent of cases who are 
                 advanced-stage at the time of clinical diagnosis. In the 
-                intervention scenario, the proportion presenting in advanced stage may
+                intervention scenario, the percent presenting in advanced stage may
                 decrease due to early detection efforts.'),
               p('The default intervention involves no formal early detection strategy,
                 only changes to the treatments available (see next two panels).'),
-             # Proportion advanced
+             # Percent advanced
               h5('CONTROL SCENARIO'),
-             sliderInput("prop_a0", label = "Proportion advanced",
-                         min=0, max=1, step=0.01, value=0.85),
-             # Proportion advanced
+             sliderInput("prop_a0", label = "Percent advanced",
+                         min=0, max=100, step=1, value=85),
+             # Percent advanced
               h5('INTERVENTION SCENARIO'),
-             sliderInput("prop_a1", label = "Proportion advanced",
-                         min=0, max=1, step=0.01, value=0.85)
+             sliderInput("prop_a1", label = "Percent advanced",
+                         min=0, max=100, step=1, value=85)
              ),
     "Treatments Available",
     tabPanel("Control Scenario",
               h4('Specify who is eligible for each treatment, 
-                and what proportion of eligible cases receive it.'),
+                and what percent of eligible cases receive it.'),
               p('The current standard of care in Tanzania is that about 20% of all women 
                   receive endocrine therapy, even though only the cases who are 
                   estrogen-receptor positive (ER+) can actually benefit from it.'),
@@ -91,8 +92,8 @@ shinyUI(fluidPage(
               radioButtons("tam.elig.control", "Who is eligible for endocrine therapy?",
                            c("All" = 'All',
                              "ER+ only" = 'ERpos')),
-              sliderInput('tam.prop.control', label='What proportion of eligible women receive endocrine therapy?', 
-                          0.20, min = 0, max = 1, step = .01),
+              sliderInput('tam.prop.control', label='What percent of eligible women receive endocrine therapy?', 
+                          20, min = 0, max = 100, step = 1),
               br(),
               h5('CHEMOTHERAPY'),
               radioButtons("chemo.elig.control", "Who is eligible for chemotherapy?",
@@ -100,12 +101,12 @@ shinyUI(fluidPage(
                             "ER- only" = 'ERneg',
                             "ER- and advanced-stage ER+" = 'ERnegERposAdv'
                             )),
-              sliderInput('chemo.prop.control', label='What proportion of eligible women receive chemotherapy?', 
-                          0.0, min = 0, max = 1, step = .01)
+              sliderInput('chemo.prop.control', label='What percent of eligible women receive chemotherapy?', 
+                          0, min = 0, max = 100, step = 1)
               ),
     tabPanel("Intervention Scenario",
              h4('Specify who is eligible for each treatment, 
-                and what proportion of eligible cases receive it.'),
+                and what percent of eligible cases receive it.'),
              p('In the default intervention, all ER+ women receive endocrine therapy.'),
              br(),
              h5('ENDOCRINE THERAPY'),
@@ -113,8 +114,8 @@ shinyUI(fluidPage(
                           c("All" = 'All',
                             "ER+ only" = 'ERpos'),
                           selected='ERpos'),
-             sliderInput('tam.prop.interv', label='What proportion of eligible women receive endocrine therapy?', 
-                         1.0, min = 0, max = 1, step = .01),
+             sliderInput('tam.prop.interv', label='What percent of eligible women receive endocrine therapy?', 
+                         100, min = 0, max = 100, step = 1),
              br(),
              h5('CHEMOTHERAPY'),
              radioButtons("chemo.elig.interv", "Who is eligible for chemotherapy?",
@@ -123,8 +124,8 @@ shinyUI(fluidPage(
                             "ER- and advanced-stage ER+" = 'ERnegERposAdv'
                           ),
                           selected='All'),
-             sliderInput('chemo.prop.interv', label='What proportion of eligible women receive chemotherapy?', 
-                         0.0, min = 0, max = 1, step = .01)
+             sliderInput('chemo.prop.interv', label='What percent of eligible women receive chemotherapy?', 
+                         0, min = 0, max = 100, step = 1)
     ),
     "Parameter Summary",
     tabPanel("User-Defined Parameters",
@@ -137,12 +138,12 @@ shinyUI(fluidPage(
              br(),
              h5('ADVANCED-STAGE TREATMENTS'),
              em('Values represent percents falling into each group. Columns
-                should sum to 100%'),
+                should sum to 100% across both ER types'),
              tableOutput('paramsum2'),
              br(),
              h5('EARLY-STAGE TREATMENTS'),
              em('Values represent percents falling into each group. Columns
-                should sum to 100%'),
+                should sum to 100% across both ER types'),
              tableOutput('paramsum3'),
 
              br(), br(), br(), br(), br(), br(),
